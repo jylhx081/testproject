@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO目标检测</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 80px 20px 20px 20px;
+            /* 为固定导航栏留出空间 */
+        }
+
+        /* 固定导航栏样式 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 0 0 15px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* 响应式设计 - 媒体查询 */
+        @media (max-width: 768px) {
+            /* 调整整体内边距 */
+            body {
+                padding: 120px 15px 15px 15px;
+            }
+
+            /* 导航栏调整 */
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            /* 容器调整 */
+            .container {
+                padding: 25px;
+                border-radius: 15px;
+            }
+
+            /* 标题大小调整 */
+            h1 {
+                font-size: 1.8em !important;
+                margin-bottom: 20px !important;
+            }
+
+            /* 按钮组调整 */
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+
+            button {
+                padding: 12px 25px;
+                font-size: 14px;
+                width: 100%;
+                max-width: 250px;
+            }
+
+            .btn-success {
+                padding: 15px 30px;
+                font-size: 16px;
+            }
+
+            /* BMR计算器表单调整 */
+            .bmr-form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            /* 网格布局调整 */
+            .results-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .macro-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .macro-item {
+                padding: 10px;
+            }
+
+            .macro-value {
+                font-size: 20px;
+            }
+
+            /* 模态框调整 */
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+                border-radius: 15px;
+            }
+
+            /* 上传提示信息调整 */
+            div[style*="margin-top: 15px; padding: 12px; background: #e3f2fd;"] {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* 进一步缩小屏幕的调整 */
+            body {
+                padding: 100px 10px 10px 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em !important;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 13px;
+                max-width: 220px;
+            }
+
+            .macro-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .modal-content {
+                padding: 15px;
+            }
+
+            /* 营养信息卡片调整 */
+            div[style*="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));"] {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(156, 39, 176, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            font-size: 18px;
+            padding: 18px 40px;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-success:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .image-preview {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .preview-container {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .results h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .detection-item {
+            background: white;
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .detection-item strong {
+            color: #667eea;
+        }
+
+        .error {
+            color: #f5576c;
+            text-align: center;
+            padding: 15px;
+            background: #ffe6e6;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        /* BMR计算器样式 */
+        #bmrCalculator {
+            display: none;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #bmrCalculator h3 {
+            color: #9c27b0;
+            margin-bottom: 15px;
+        }
+
+        .bmr-form-group {
+            margin-bottom: 15px;
+        }
+
+        .bmr-form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .bmr-form-row .bmr-form-group {
+            flex: 1;
+        }
+
+        .bmr-result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e6f7ff;
+            border-radius: 8px;
+            border-left: 4px solid #1890ff;
+        }
+
+        .bmr-result h4 {
+            color: #1890ff;
+            margin-bottom: 10px;
+        }
+
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .macro-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .macro-item.protein {
+            color: #ff9800;
+        }
+
+        .macro-item.fat {
+            color: #e91e63;
+        }
+
+        .macro-item.carbs {
+            color: #9c27b0;
+        }
+
+        .macro-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .macro-unit {
+            font-size: 12px;
+            color: #666;
+        }
+
+        #cameraModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <div>
+            <a href="/" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🏠 首页</a>
+            <a href="/profile" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">👤
+                个人资料</a>
+            <a href="/history" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">📊
+                检测历史</a>
+            {% if user and user.is_admin %}
+            <a href="/admin" style="color: #f5576c; text-decoration: none; margin: 0 15px; font-weight: bold;">🛠️
+                管理后台</a>
+            {% endif %}
+        </div>
+        <div>
+            <span style="color: #666;">欢迎, {% if user %}{{ user.username }}{% endif %}</span>
+            <a href="/logout" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🚪
+                退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>🎯 YOLO目标检测</h1>
+
+        <div class="upload-section">
+            <div class="button-group">
+                <button class="btn-primary" onclick="document.getElementById('fileInput').click()">
+                    📁 选择图片
+                </button>
+                <button class="btn-secondary" onclick="openCamera()">
+                    📷 拍照上传
+                </button>
+                <button class="btn-warning" onclick="toggleWeightInput()" id="weightToggleBtn"
+                    style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+                    ⚖️ 添加重量数据
+                </button>
+                <button class="btn-info" onclick="toggleBMRCalculator()" id="bmrToggleBtn"
+                    style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);">
+                    🧮 BMR计算器
+                </button>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+            <div
+                style="margin-top: 15px; padding: 12px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 5px;">
+                <strong style="color: #1976d2;">💡 提示：</strong>
+                <span style="color: #555;">
+                    点击“⚖️ 添加重量数据”按钮，输入或模拟重量序列，即可启用<strong>视觉-重量对齐功能</strong>，
+                    为每个检测到的菜品自动分配精准重量。
+                </span>
+            </div>
+        </div>
+
+        <!-- BMR计算器 -->
+        <div id="bmrCalculator">
+            <h3>🧮 基础代谢率(BMR) & 总能量消耗(TDEE) 计算器</h3>
+            <div class="bmr-form-row">
+                <div class="bmr-form-group">
+                    <label>体重 (kg)</label>
+                    <input type="number" id="bmrWeight" step="0.1" placeholder="例如: 70.5">
+                </div>
+                <div class="bmr-form-group">
+                    <label>身高 (cm)</label>
+                    <input type="number" id="bmrHeight" step="0.1" placeholder="例如: 175">
+                </div>
+            </div>
+            <div class="bmr-form-row">
+                <div class="bmr-form-group">
+                    <label>年龄</label>
+                    <input type="number" id="bmrAge" placeholder="例如: 25">
+                </div>
+                <div class="bmr-form-group">
+                    <label>性别</label>
+                    <select id="bmrGender">
+                        <option value="">请选择</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                    </select>
+                </div>
+            </div>
+            <div class="bmr-form-group">
+                <label>活动水平</label>
+                <select id="bmrActivity">
+                    <option value="sedentary">久坐 (办公室工作，很少运动)</option>
+                    <option value="light">轻度 (每周轻度运动1-3天)</option>
+                    <option value="moderate" selected>中度 (每周中度运动3-5天)</option>
+                    <option value="heavy">重度 (每周高强度运动6-7天)</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="calculateBMR()" style="width: 100%;">📊 计算 BMR & TDEE</button>
+            <div id="bmrResult" class="bmr-result" style="display: none;"></div>
+        </div>
+
+        <!-- 重量数据输入区域 -->
+        <div id="weightInputSection"
+            style="display: none; margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">⚖️ 重量传感器数据</h3>
+            <div style="margin-bottom: 15px;">
+                <button class="btn-primary" onclick="simulateWeightData()" style="padding: 10px 20px;">
+                    🧪 模拟重量数据
+                </button>
+                <button class="btn-secondary" onclick="clearWeightData()" style="padding: 10px 20px; background: #999;">
+                    🗑️ 清空数据
+                </button>
+                <span style="margin-left: 15px; color: #666;">或者手动输入重量序列（每行一个重量，单位：克）</span>
+            </div>
+            <textarea id="weightDataInput" placeholder="示例：&#10;85.5&#10;45.2&#10;120.3&#10;55.1&#10;&#10;或点击上方按钮自动模拟"
+                style="width: 100%; height: 120px; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 14px;"></textarea>
+            <div id="weightDataStatus" style="margin-top: 10px; color: #4caf50; display: none;">
+                ✅ 已加载 <span id="weightEventCount">0</span> 条重量事件
+            </div>
+        </div>
+
+        <div class="image-preview" id="imagePreview"></div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在检测中...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div style="text-align: center;">
+            <button class="btn-success" id="detectBtn" onclick="detectObjects()" disabled>
+                🚀 开始检测
+            </button>
+        </div>
+
+        <div class="results" id="results">
+            <div class="results-grid">
+                <div class="result-card">
+                    <h3>🔍 检测结果</h3>
+                    <div id="detectionResults"></div>
+                </div>
+                <div class="result-card">
+                    <h3>📊 营养分析</h3>
+                    <div id="nutritionSummary"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 重量对齐结果 -->
+        <div id="alignmentResults"
+            style="display: none; margin-top: 30px; padding: 25px; background: #f0f7ff; border-radius: 10px; border-left: 4px solid #667eea;">
+            <h2 style="color: #667eea; margin-bottom: 20px;">⚖️ 视觉-重量对齐结果</h2>
+
+            <div id="alignmentMetrics"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+            </div>
+
+            <div id="alignmentDetails"></div>
+        </div>
+    </div>
+
+    <!-- 相机模态框 -->
+    <div id="cameraModal">
+        <div class="modal-content">
+            <h2 style="text-align: center; margin-bottom: 20px;">📷 拍照</h2>
+            <video id="video" autoplay></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <div class="modal-buttons">
+                <button class="btn-success" onclick="capturePhoto()">📸 拍照</button>
+                <button class="btn-primary" onclick="closeCamera()">❌ 取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentImage = null;
+        let stream = null;
+        let weightDataEnabled = false;
+        let currentWeightData = null;
+        let bmrCalculatorEnabled = false;
+
+        // 页面加载完成后，自动填充用户信息
+        window.addEventListener('DOMContentLoaded', function () {
+            // 如果用户已登录，尝试填充个人信息
+            fetch('/profile')
+                .then(response => response.json())
+                .then(user => {
+                    if (user && user.height && user.weight && user.age && user.gender) {
+                        document.getElementById('bmrHeight').value = user.height;
+                        document.getElementById('bmrWeight').value = user.weight;
+                        document.getElementById('bmrAge').value = user.age;
+                        document.getElementById('bmrGender').value = user.gender;
+                    }
+                })
+                .catch(err => {
+                    console.log('无法获取用户信息:', err);
+                });
+        });
+
+        function toggleBMRCalculator() {
+            bmrCalculatorEnabled = !bmrCalculatorEnabled;
+            const section = document.getElementById('bmrCalculator');
+            const btn = document.getElementById('bmrToggleBtn');
+            const result = document.getElementById('bmrResult');
+
+            if (bmrCalculatorEnabled) {
+                section.style.display = 'block';
+                btn.textContent = '🧮 隐藏BMR计算器';
+                btn.style.background = 'linear-gradient(135deg, #673ab7 0%, #9c27b0 100%)';
+            } else {
+                section.style.display = 'none';
+                btn.textContent = '🧮 BMR计算器';
+                btn.style.background = 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)';
+                // 清除结果
+                result.style.display = 'none';
+                result.innerHTML = '';
+            }
+        }
+
+        function toggleWeightInput() {
+            weightDataEnabled = !weightDataEnabled;
+            const section = document.getElementById('weightInputSection');
+            const btn = document.getElementById('weightToggleBtn');
+
+            if (weightDataEnabled) {
+                section.style.display = 'block';
+                btn.textContent = '⚖️ 隐藏重量数据';
+                btn.style.background = 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)';
+            } else {
+                section.style.display = 'none';
+                btn.textContent = '⚖️ 添加重量数据';
+                btn.style.background = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
+            }
+        }
+
+        function simulateWeightData() {
+            // 根据当前图片估计菜品数量，生成模拟数据
+            const numFoods = 3 + Math.floor(Math.random() * 3); // 3-5个菜品
+            const weights = [];
+
+            for (let i = 0; i < numFoods; i++) {
+                // 生成 30-150g 的随机重量
+                const weight = (30 + Math.random() * 120).toFixed(1);
+                weights.push(weight);
+            }
+
+            document.getElementById('weightDataInput').value = weights.join('\n');
+            updateWeightDataStatus(weights.length);
+        }
+
+        function calculateBMR() {
+            const weight = parseFloat(document.getElementById('bmrWeight').value);
+            const height = parseFloat(document.getElementById('bmrHeight').value);
+            const age = parseInt(document.getElementById('bmrAge').value);
+            const gender = document.getElementById('bmrGender').value;
+            const activityLevel = document.getElementById('bmrActivity').value;
+
+            if (!weight || !height || !age || !gender) {
+                alert('请填写完整的身体信息');
+                return;
+            }
+
+            // 发送到后端计算
+            fetch('/calculate_bmr_tdee', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    weight: weight,
+                    height: height,
+                    age: age,
+                    gender: gender,
+                    activity_level: activityLevel
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayBMRResult(data.data);
+                    } else {
+                        alert('计算失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('计算出错，请稍后重试');
+                });
+        }
+
+        function displayBMRResult(result) {
+            const resultDiv = document.getElementById('bmrResult');
+            const activityLabels = {
+                'sedentary': '久坐生活方式',
+                'light': '轻度活动',
+                'moderate': '中度活动',
+                'heavy': '重度活动'
+            };
+
+            const macro = result.macronutrients;
+            resultDiv.innerHTML = `
+                <h4>计算结果</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div style="background: #fffbe6; padding: 10px; border-radius: 5px;">
+                        <strong>基础代谢率 (BMR)</strong><br>
+                        <span style="font-size: 18px; color: #1890ff;">${result.bmr} 千卡/天</span>
+                    </div>
+                    <div style="background: #f0f8ff; padding: 10px; border-radius: 5px;">
+                        <strong>总能量消耗 (TDEE)</strong><br>
+                        <span style="font-size: 18px; color: #52c41a;">${result.tdee} 千卡/天</span><br>
+                        <small>${activityLabels[result.activity_multiplier] || '未知活动水平'}</small>
+                    </div>
+                </div>
+                
+                <h4>宏量营养素推荐摄入量</h4>
+                <div class="macro-grid">
+                    <div class="macro-item protein">
+                        <div>蛋白质</div>
+                        <div class="macro-value">${macro.protein.grams}</div>
+                        <div class="macro-unit">克/天</div>
+                        <div>${macro.protein.calories} 千卡 (${macro.protein.percentage}%)</div>
+                    </div>
+                    <div class="macro-item fat">
+                        <div>脂肪</div>
+                        <div class="macro-value">${macro.fat.grams}</div>
+                        <div class="macro-unit">克/天</div>
+                        <div>${macro.fat.calories} 千卡 (${macro.fat.percentage}%)</div>
+                    </div>
+                    <div class="macro-item carbs">
+                        <div>碳水化合物</div>
+                        <div class="macro-value">${macro.carbohydrates.grams}</div>
+                        <div class="macro-unit">克/天</div>
+                        <div>${macro.carbohydrates.calories} 千卡 (${macro.carbohydrates.percentage}%)</div>
+                    </div>
+                </div>
+            `;
+
+            resultDiv.style.display = 'block';
+
+            // 滚动到结果区域
+            setTimeout(() => {
+                resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 300);
+        }
+
+        function updateWeightDataStatus(count) {
+            document.getElementById('weightEventCount').textContent = count;
+            document.getElementById('weightDataStatus').style.display = 'block';
+        }
+
+        function parseWeightData() {
+            const input = document.getElementById('weightDataInput').value.trim();
+            if (!input) return null;
+
+            const weights = input.split('\n')
+                .map(line => parseFloat(line.trim()))
+                .filter(w => !isNaN(w) && w > 0);
+
+            if (weights.length === 0) return null;
+
+            // 构建重量事件序列
+            const events = [{
+                timestamp: 0,
+                cumulative_weight: 0,
+                delta_weight: 0
+            }];
+
+            let cumulative = 0;
+            let timestamp = 0;
+
+            weights.forEach(weight => {
+                timestamp += 1.0 + Math.random() * 0.5; // 模拟时间间隔
+                cumulative += weight;
+                events.push({
+                    timestamp: timestamp,
+                    cumulative_weight: cumulative,
+                    delta_weight: weight
+                });
+            });
+
+            updateWeightDataStatus(weights.length);
+            return events;
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                currentImage = file;
+                displayImage(file);
+                document.getElementById('detectBtn').disabled = false;
+                clearResults();
+            }
+        }
+
+        function displayImage(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = `
+                    <div class="preview-container">
+                        <img src="${e.target.result}" class="preview-image" alt="预览图片">
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function openCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                document.getElementById('cameraModal').style.display = 'flex';
+            } catch (err) {
+                showError('无法访问摄像头: ' + err.message);
+            }
+        }
+
+        function closeCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('cameraModal').style.display = 'none';
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            canvas.toBlob(function (blob) {
+                currentImage = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+                displayImage(currentImage);
+                document.getElementById('detectBtn').disabled = false;
+                clearResults();
+                closeCamera();
+            }, 'image/jpeg');
+        }
+
+        async function detectObjects() {
+            if (!currentImage) {
+                showError('请先选择或拍摄图片');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', currentImage);
+
+            // 如果启用了重量数据，解析并添加到请求中
+            if (weightDataEnabled) {
+                const weightData = parseWeightData();
+                if (weightData) {
+                    formData.append('weight_data', JSON.stringify(weightData));
+                    currentWeightData = weightData;
+                } else if (document.getElementById('weightDataInput').value.trim()) {
+                    showError('重量数据格式错误，请检查输入');
+                    return;
+                }
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('alignmentResults').style.display = 'none';
+            document.getElementById('detectBtn').disabled = true;
+
+            try {
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                console.log('检测响应数据:', data); // 调试日志
+
+                if (data.success) {
+                    displayResults(data);
+
+                    // 如果有对齐结果，显示
+                    if (data.alignment && !data.alignment.error) {
+                        console.log('对齐结果:', data.alignment); // 调试日志
+                        displayAlignmentResults(data.alignment);
+                    } else if (data.alignment && data.alignment.error) {
+                        console.error('对齐错误:', data.alignment.error);
+                        showError('对齐失败: ' + data.alignment.error);
+                    } else if (weightDataEnabled && document.getElementById('weightDataInput').value.trim()) {
+                        console.warn('有重量数据但没有返回对齐结果');
+                        showError('未能完成重量对齐，请检查重量数据格式');
+                    }
+                } else {
+                    showError(data.error || '检测失败');
+                }
+            } catch (err) {
+                showError('网络错误: ' + err.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('detectBtn').disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = `
+                <div class="preview-container">
+                    <img src="${data.image}" class="preview-image" alt="检测结果">
+                </div>
+            `;
+
+            // 显示检测结果
+            const detectionResultsDiv = document.getElementById('detectionResults');
+            let detectionHTML = `<h4>共检测到 ${data.count} 个目标</h4>`;
+
+            if (data.detections.length > 0) {
+                data.detections.forEach((det, index) => {
+                    detectionHTML += `
+                        <div class="detection-item">
+                            <strong>目标 ${index + 1}:</strong> 
+                            ${det.class} 
+                            (置信度: ${(det.confidence * 100).toFixed(2)}%)
+                        </div>
+                    `;
+                });
+            } else {
+                detectionHTML += '<p>未检测到任何目标</p>';
+            }
+
+            detectionResultsDiv.innerHTML = detectionHTML;
+
+            // 显示营养摘要（如果有的话）
+            const nutritionSummaryDiv = document.getElementById('nutritionSummary');
+            nutritionSummaryDiv.innerHTML = `
+                <p>请添加重量数据以获取详细的营养分析</p>
+                <button class="btn-primary" onclick="toggleWeightInput(); document.getElementById('weightToggleBtn').scrollIntoView({behavior: 'smooth'});" style="margin-top: 10px;">
+                    ⚖️ 添加重量数据
+                </button>
+            `;
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function clearResults() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('alignmentResults').style.display = 'none';
+        }
+
+        function displayAlignmentResults(alignment) {
+            const resultsDiv = document.getElementById('alignmentResults');
+            const metricsDiv = document.getElementById('alignmentMetrics');
+            const detailsDiv = document.getElementById('alignmentDetails');
+
+            // 显示指标
+            const metrics = alignment.metrics;
+            metricsDiv.innerHTML = `
+                <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="color: #999; font-size: 12px; margin-bottom: 5px;">总菜品数</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #667eea;">${metrics.total_foods}</div>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="color: #999; font-size: 12px; margin-bottom: 5px;">成功匹配</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #4caf50;">${metrics.matched_foods}</div>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="color: #999; font-size: 12px; margin-bottom: 5px;">未匹配</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #ff9800;">${metrics.unmatched_foods}</div>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="color: #999; font-size: 12px; margin-bottom: 5px;">平均置信度</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #667eea;">${(metrics.avg_confidence * 100).toFixed(1)}%</div>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="color: #999; font-size: 12px; margin-bottom: 5px;">总重量</div>
+                    <div style="font-size: 24px; font-weight: bold; color: #667eea;">${metrics.total_weight.toFixed(1)}g</div>
+                </div>
+            `;
+
+            // 显示详细结果
+            let detailsHTML = '';
+            alignment.aligned_foods.forEach((food, i) => {
+                const matchedClass = food.matched ? 'matched' : 'unmatched';
+                const matchedIcon = food.matched ? '✅' : '⚠️';
+                const matchedText = food.matched ? '已匹配' : '未匹配（使用估计值）';
+                const borderColor = food.matched ? '#4caf50' : '#ff9800';
+
+                detailsHTML += `
+                    <div style="background: white; padding: 20px; margin: 10px 0; border-radius: 10px; border-left: 4px solid ${borderColor};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #333; margin: 0;">菜品 #${i + 1}: ${food.class}</h3>
+                            <span style="padding: 5px 12px; background: ${food.matched ? '#e8f5e9' : '#fff3e0'}; color: ${food.matched ? '#4caf50' : '#ff9800'}; border-radius: 20px; font-size: 14px; font-weight: bold;">
+                                ${matchedIcon} ${matchedText}
+                            </span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div>
+                                <div style="color: #999; font-size: 13px; margin-bottom: 5px;">重量</div>
+                                <div style="font-size: 20px; font-weight: bold; color: #667eea;">${food.weight.toFixed(2)} 克</div>
+                            </div>
+                            <div>
+                                <div style="color: #999; font-size: 13px; margin-bottom: 5px;">对齐置信度</div>
+                                <div style="font-size: 20px; font-weight: bold; color: ${food.confidence > 0.7 ? '#4caf50' : food.confidence > 0.4 ? '#ff9800' : '#f5576c'};">
+                                    ${(food.confidence * 100).toFixed(1)}%
+                                </div>
+                            </div>
+                            <div>
+                                <div style="color: #999; font-size: 13px; margin-bottom: 5px;">位置信息</div>
+                                <div style="font-size: 14px; color: #666;">
+                                    (${food.bbox[0].toFixed(0)}, ${food.bbox[1].toFixed(0)}) - (${food.bbox[2].toFixed(0)}, ${food.bbox[3].toFixed(0)})
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            detailsDiv.innerHTML = detailsHTML;
+            resultsDiv.style.display = 'block';
+
+            // 显示营养信息（如果有）
+            if (alignment.nutrition && alignment.nutrition.length > 0) {
+                displayNutritionInfo(alignment.nutrition);
+            }
+
+            // 滚动到结果区域
+            setTimeout(() => {
+                // 先滚动到检测结果
+                document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // 然后滚动到对齐结果（如果有）
+                if (resultsDiv.style.display !== 'none') {
+                    setTimeout(() => {
+                        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 500);
+                }
+            }, 300);
+        }
+
+        function displayNutritionInfo(nutritionData) {
+            let nutritionHTML = '<div style="margin-top: 30px; padding: 25px; background: #f0fff4; border-radius: 10px; border-left: 4px solid #4caf50;">';
+            nutritionHTML += '<h2 style="color: #4caf50; margin-bottom: 20px;">🥗 营养成分详情</h2>';
+
+            let totalCalories = 0;
+            let totalProtein = 0;
+            let totalFat = 0;
+            let totalCarbs = 0;
+
+            nutritionData.forEach((item, index) => {
+                if (item.error) {
+                    // 没有营养数据
+                    nutritionHTML += `
+                        <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #999;">
+                            <h3 style="color: #666; margin-bottom: 10px;">${item.dish_name} (${item.weight})</h3>
+                            <p style="color: #999; margin: 0;">⚠️ ${item.error}</p>
+                        </div>
+                    `;
+                } else {
+                    // 有营养数据
+                    // 计算总营养
+                    item.nutrients.forEach(nutrient => {
+                        if (nutrient.name === '热量') totalCalories += parseFloat(nutrient.value);
+                        else if (nutrient.name === '蛋白质') totalProtein += parseFloat(nutrient.value);
+                        else if (nutrient.name === '脂肪') totalFat += parseFloat(nutrient.value);
+                        else if (nutrient.name === '碳水化合物') totalCarbs += parseFloat(nutrient.value);
+                    });
+
+                    nutritionHTML += `
+                        <div style="background: white; padding: 20px; margin: 15px 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0;">
+                                <h3 style="color: #333; margin: 0 0 5px 0;">${item.dish_name}</h3>
+                                <div style="color: #666; font-size: 14px;">
+                                    <span>🏪 ${item.canteen}</span>
+                                    <span style="margin-left: 15px;">🍳 ${item.cooking_method}</span>
+                                    <span style="margin-left: 15px; font-weight: bold; color: #667eea;">⚖️ ${item.weight}</span>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                    `;
+
+                    item.nutrients.forEach(nutrient => {
+                        const value = parseFloat(nutrient.value);
+                        let color = '#667eea';
+
+                        // 根据营养成分设置不同颜色
+                        if (nutrient.name === '热量') color = '#f5576c';
+                        else if (nutrient.name === '蛋白质') color = '#ff9800';
+                        else if (nutrient.name === '脂肪') color = '#e91e63';
+                        else if (nutrient.name === '碳水化合物') color = '#9c27b0';
+                        else if (nutrient.name === '膳食纤维') color = '#4caf50';
+
+                        nutritionHTML += `
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
+                                <div style="color: #999; font-size: 12px; margin-bottom: 5px;">${nutrient.name}</div>
+                                <div style="font-size: 18px; font-weight: bold; color: ${color};">
+                                    ${nutrient.value}
+                                    <span style="font-size: 12px; font-weight: normal; color: #666;">${nutrient.unit}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    nutritionHTML += `
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            // 显示营养摘要
+            const nutritionSummaryDiv = document.getElementById('nutritionSummary');
+            nutritionSummaryDiv.innerHTML = `
+                <h4>🍽️ 本餐营养总览</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div style="background: #fff5f5; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color: #f5576c; font-size: 12px; margin-bottom: 5px;">总热量</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #f5576c;">${totalCalories.toFixed(1)}</div>
+                        <div style="font-size: 12px; color: #666;">千卡</div>
+                    </div>
+                    <div style="background: #fff8f0; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color: #ff9800; font-size: 12px; margin-bottom: 5px;">蛋白质</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #ff9800;">${totalProtein.toFixed(1)}</div>
+                        <div style="font-size: 12px; color: #666;">克</div>
+                    </div>
+                    <div style="background: #fef5f7; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color: #e91e63; font-size: 12px; margin-bottom: 5px;">脂肪</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #e91e63;">${totalFat.toFixed(1)}</div>
+                        <div style="font-size: 12px; color: #666;">克</div>
+                    </div>
+                    <div style="background: #f9f5ff; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color: #9c27b0; font-size: 12px; margin-bottom: 5px;">碳水化合物</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #9c27b0;">${totalCarbs.toFixed(1)}</div>
+                        <div style="font-size: 12px; color: #666;">克</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button class="btn-info" onclick="toggleBMRCalculator(); document.getElementById('bmrToggleBtn').scrollIntoView({behavior: 'smooth'});" style="padding: 8px 15px; font-size: 14px;">
+                        🧮 计算我的BMR & TDEE
+                    </button>
+                </div>
+            `;
+
+            nutritionHTML += '</div>';
+
+            // 插入到对齐结果后面
+            const alignmentDiv = document.getElementById('alignmentResults');
+            if (alignmentDiv) {
+                alignmentDiv.insertAdjacentHTML('beforeend', nutritionHTML);
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人资料 - YOLO目标检测</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 80px 20px 20px 20px;
+            /* 为固定导航栏留出空间 */
+        }
+
+        /* 固定导航栏样式 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 0 0 15px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 响应式设计 - 媒体查询 */
+        @media (max-width: 768px) {
+            /* 调整整体内边距 */
+            body {
+                padding: 120px 15px 15px 15px;
+            }
+
+            /* 导航栏调整 */
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .navbar div {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .navbar a {
+                margin: 0 8px;
+                font-size: 14px;
+            }
+
+            /* 容器调整 */
+            .container {
+                padding: 25px;
+                border-radius: 15px;
+            }
+
+            /* 标题大小调整 */
+            h1 {
+                font-size: 2em;
+                margin-bottom: 20px;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            /* 表单布局调整 */
+            .form-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            /* 输入框调整 */
+            input, select, textarea {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            /* 按钮调整 */
+            button {
+                padding: 10px 25px;
+                font-size: 15px;
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* 进一步缩小屏幕的调整 */
+            body {
+                padding: 100px 10px 10px 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            h2 {
+                font-size: 1.3em;
+            }
+
+            .navbar {
+                padding: 10px 15px;
+            }
+
+            .navbar a {
+                margin: 0 5px;
+                font-size: 13px;
+            }
+
+            button {
+                padding: 9px 20px;
+                font-size: 14px;
+            }
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.error {
+            background: #ffe6e6;
+            color: #f5576c;
+        }
+
+        .message.success {
+            background: #e6ffe6;
+            color: #4caf50;
+        }
+
+        .info-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            margin: 10px 0;
+            color: #555;
+        }
+
+        .info-item strong {
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <div>
+            <a href="/" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🏠 首页</a>
+            <a href="/profile" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">👤
+                个人资料</a>
+            <a href="/history" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">📊
+                检测历史</a>
+        </div>
+        <div>
+            <span style="color: #666;">欢迎, {{ user.username }}</span>
+            <a href="/logout" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🚪
+                退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>👤 个人资料</h1>
+
+        <div class="message" id="message"></div>
+
+        <!-- 基本信息 -->
+        <div class="section">
+            <h2>📋 基本信息</h2>
+            <form id="profileForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" value="{{ user.username }}" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" id="email" value="{{ user.email or '' }}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>身高 (cm)</label>
+                        <input type="number" id="height" step="0.1" value="{{ user.height or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>体重 (kg)</label>
+                        <input type="number" id="weight" step="0.1" value="{{ user.weight or '' }}">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>年龄</label>
+                        <input type="number" id="age" value="{{ user.age or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>性别</label>
+                        <select id="gender">
+                            <option value="">请选择</option>
+                            <option value="男" {% if user.gender=='男' %}selected{% endif %}>男</option>
+                            <option value="女" {% if user.gender=='女' %}selected{% endif %}>女</option>
+                            <option value="其他" {% if user.gender=='其他' %}selected{% endif %}>其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit">💾 保存基本信息</button>
+            </form>
+        </div>
+
+        <!-- 饮食习惯 -->
+        <div class="section">
+            <h2>🍽️ 饮食习惯</h2>
+            <form id="dietForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>饮食类型</label>
+                        <select id="diet_type">
+                            <option value="">请选择</option>
+                            <option value="杂食">杂食</option>
+                            <option value="素食">素食</option>
+                            <option value="低碳水">低碳水</option>
+                            <option value="高蛋白">高蛋白</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>每天用餐次数</label>
+                        <input type="number" id="meals_per_day" min="1" max="10">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>过敏食物</label>
+                    <input type="text" id="allergies" placeholder="例如：海鲜、坚果等">
+                </div>
+
+                <div class="form-group">
+                    <label>饮食偏好</label>
+                    <textarea id="preferences" rows="3" placeholder="例如：喜欢吃辣、偏爱中餐等"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>每天饮水量 (L)</label>
+                    <input type="number" id="water_intake" step="0.1" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label>其他备注</label>
+                    <textarea id="notes" rows="3"></textarea>
+                </div>
+
+                <button type="submit">💾 保存饮食习惯</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 加载饮食习惯数据
+        async function loadDietHabits() {
+            try {
+                const response = await fetch('/diet_habits');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.diet_type) {
+                        document.getElementById('diet_type').value = data.diet_type || '';
+                        document.getElementById('allergies').value = data.allergies || '';
+                        document.getElementById('preferences').value = data.preferences || '';
+                        document.getElementById('meals_per_day').value = data.meals_per_day || '';
+                        document.getElementById('water_intake').value = data.water_intake || '';
+                        document.getElementById('notes').value = data.notes || '';
+                    }
+                }
+            } catch (err) {
+                console.error('加载饮食习惯失败:', err);
+            }
+        }
+
+        // 页面加载时获取饮食习惯
+        loadDietHabits();
+
+        // 保存基本信息
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                email: document.getElementById('email').value,
+                height: parseFloat(document.getElementById('height').value) || null,
+                weight: parseFloat(document.getElementById('weight').value) || null,
+                age: parseInt(document.getElementById('age').value) || null,
+                gender: document.getElementById('gender').value || null
+            };
+
+            try {
+                const response = await fetch('/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                showMessage(data.success ? 'success' : 'error', data.message);
+            } catch (err) {
+                showMessage('error', '保存失败: ' + err.message);
+            }
+        });
+
+        // 保存饮食习惯
+        document.getElementById('dietForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                diet_type: document.getElementById('diet_type').value,
+                allergies: document.getElementById('allergies').value,
+                preferences: document.getElementById('preferences').value,
+                meals_per_day: parseInt(document.getElementById('meals_per_day').value) || null,
+                water_intake: parseFloat(document.getElementById('water_intake').value) || null,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                const response = await fetch('/diet_habits', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                showMessage(data.success ? 'success' : 'error', data.message);
+            } catch (err) {
+                showMessage('error', '保存失败: ' + err.message);
+            }
+        });
+
+        function showMessage(type, text) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = 'message ' + type;
+            messageDiv.textContent = text;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

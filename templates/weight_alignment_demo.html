@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视觉-重量对齐演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        /* 响应式设计 - 媒体查询 */
+        @media (max-width: 768px) {
+            /* 调整整体内边距 */
+            body {
+                padding: 15px;
+            }
+
+            /* 容器调整 */
+            .container {
+                padding: 25px;
+                border-radius: 15px;
+            }
+
+            /* 标题大小调整 */
+            h1 {
+                font-size: 2em;
+                margin-bottom: 20px;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            h3 {
+                font-size: 1.3em;
+            }
+
+            /* 按钮组调整 */
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+
+            button {
+                padding: 12px 25px;
+                font-size: 14px;
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .btn-success {
+                font-size: 16px;
+            }
+
+            /* 网格布局调整 */
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .metrics {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            /* 对齐结果卡片调整 */
+            div[style*="grid-template-columns: repeat(3, 1fr)"] {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+
+            /* 上传区域调整 */
+            .upload-area {
+                padding: 20px 15px;
+            }
+
+            /* 卡片元素调整 */
+            .section {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+
+            .weight-event {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* 进一步缩小屏幕的调整 */
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            h2 {
+                font-size: 1.3em;
+            }
+
+            h3 {
+                font-size: 1.1em;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 13px;
+                max-width: 250px;
+            }
+
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .metric-card {
+                padding: 10px;
+            }
+
+            .metric-card .value {
+                font-size: 24px;
+            }
+
+            /* 上传区域调整 */
+            .upload-area {
+                padding: 15px 10px;
+            }
+
+            /* 对齐结果卡片调整 */
+            .alignment-result {
+                padding: 12px;
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .weight-simulator {
+            margin-top: 20px;
+        }
+
+        .weight-events {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .weight-event {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            border-radius: 4px;
+        }
+
+        .results-container {
+            margin-top: 20px;
+        }
+
+        .alignment-result {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #4caf50;
+        }
+
+        .matched {
+            border-left-color: #4caf50;
+        }
+
+        .unmatched {
+            border-left-color: #ff9800;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-card h3 {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .metric-card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎯 视觉-重量对齐算法演示</h1>
+
+        <div class="info-box">
+            <h3>📖 算法说明</h3>
+            <p>
+                本算法能够将餐盘底部重量传感器记录的时序重量数据与YOLO检测到的菜品进行精准对齐。
+                支持处理数量不一致、顺序错位等异常情况。
+            </p>
+        </div>
+
+        <!-- 场景选择 -->
+        <div class="section">
+            <h2>1️⃣ 选择测试场景</h2>
+            <div class="button-group">
+                <button class="btn-primary" onclick="loadScenario('normal')">
+                    正常场景（数量一致）
+                </button>
+                <button class="btn-warning" onclick="loadScenario('missing')">
+                    漏检场景（传感器漏检）
+                </button>
+                <button class="btn-warning" onclick="loadScenario('extra')">
+                    误检场景（额外重量）
+                </button>
+                <button class="btn-warning" onclick="loadScenario('merged')">
+                    合并场景（同时取菜）
+                </button>
+            </div>
+
+            <div id="scenarioInfo" style="margin-top: 15px; color: #666;"></div>
+        </div>
+
+        <!-- 模拟数据 -->
+        <div class="section">
+            <h2>2️⃣ 模拟数据</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3 style="color: #555; margin-bottom: 10px;">🍱 检测到的菜品</h3>
+                    <div id="detectedFoods" class="weight-events"></div>
+                </div>
+
+                <div>
+                    <h3 style="color: #555; margin-bottom: 10px;">⚖️ 重量传感器数据</h3>
+                    <div id="weightEvents" class="weight-events"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 执行对齐 -->
+        <div class="section">
+            <h2>3️⃣ 执行对齐</h2>
+            <button class="btn-success" onclick="executeAlignment()" style="font-size: 18px;">
+                🚀 开始对齐算法
+            </button>
+        </div>
+
+        <!-- 对齐结果 -->
+        <div class="section" id="resultsSection" style="display: none;">
+            <h2>4️⃣ 对齐结果</h2>
+
+            <div class="metrics" id="metricsDisplay"></div>
+
+            <div class="results-container" id="alignmentResults"></div>
+        </div>
+
+        <!-- 上传真实图片测试 -->
+        <div class="section">
+            <h2>5️⃣ 上传真实图片测试（可选）</h2>
+            <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+                <p>📁 点击上传餐盘图片</p>
+                <p style="color: #999; font-size: 14px; margin-top: 10px;">支持 JPG、PNG 格式</p>
+            </div>
+            <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+
+            <div id="imagePreview"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentScenario = 'normal';
+        let simulatedData = null;
+
+        // 模拟场景数据
+        const scenarios = {
+            normal: {
+                name: '正常场景',
+                description: '4个菜品，4次重量事件，一一对应',
+                foods: [
+                    { name: '红烧肉', x: 150, y: 200, area: 10000, weight: 85 },
+                    { name: '青菜', x: 285, y: 220, area: 5600, weight: 45 },
+                    { name: '米饭', x: 415, y: 220, area: 15600, weight: 120 },
+                    { name: '豆腐', x: 540, y: 230, area: 6400, weight: 55 }
+                ],
+                weightMultiplier: 1
+            },
+            missing: {
+                name: '漏检场景',
+                description: '4个菜品，但只有3次重量事件（传感器漏检）',
+                foods: [
+                    { name: '红烧肉', x: 150, y: 200, area: 10000, weight: 85 },
+                    { name: '青菜', x: 285, y: 220, area: 5600, weight: 45 },
+                    { name: '米饭', x: 415, y: 220, area: 15600, weight: 120 },
+                    { name: '豆腐', x: 540, y: 230, area: 6400, weight: 55 }
+                ],
+                skipWeightIndex: 1  // 跳过第2个重量事件
+            },
+            extra: {
+                name: '误检场景',
+                description: '4个菜品，但有5次重量事件（额外噪声）',
+                foods: [
+                    { name: '红烧肉', x: 150, y: 200, area: 10000, weight: 85 },
+                    { name: '青菜', x: 285, y: 220, area: 5600, weight: 45 },
+                    { name: '米饭', x: 415, y: 220, area: 15600, weight: 120 },
+                    { name: '豆腐', x: 540, y: 230, area: 6400, weight: 55 }
+                ],
+                extraWeight: { index: 2, weight: 25 }  // 在第3个位置插入额外重量
+            },
+            merged: {
+                name: '合并场景',
+                description: '4个菜品，但只有3次重量事件（同时取了2个菜）',
+                foods: [
+                    { name: '红烧肉', x: 150, y: 200, area: 10000, weight: 85 },
+                    { name: '青菜', x: 285, y: 220, area: 5600, weight: 45 },
+                    { name: '米饭', x: 415, y: 220, area: 15600, weight: 120 },
+                    { name: '豆腐', x: 540, y: 230, area: 6400, weight: 55 }
+                ],
+                mergeIndices: [1, 2]  // 合并第2和第3个重量
+            }
+        };
+
+        function loadScenario(scenarioType) {
+            currentScenario = scenarioType;
+            const scenario = scenarios[scenarioType];
+
+            document.getElementById('scenarioInfo').innerHTML = `
+                <strong>${scenario.name}</strong>: ${scenario.description}
+            `;
+
+            // 显示检测到的菜品
+            let foodsHTML = '';
+            scenario.foods.forEach((food, i) => {
+                foodsHTML += `
+                    <div class="weight-event">
+                        <strong>菜品 ${i + 1}</strong>: ${food.name} 
+                        (位置: ${food.x}, ${food.y}, 面积: ${food.area}px²)
+                    </div>
+                `;
+            });
+            document.getElementById('detectedFoods').innerHTML = foodsHTML;
+
+            // 生成重量事件
+            const weights = generateWeightEvents(scenario);
+            let weightsHTML = '<div class="weight-event"><strong>初始</strong>: 0.00g (累计: 0.00g)</div>';
+            let cumulative = 0;
+
+            weights.forEach((w, i) => {
+                cumulative += w;
+                weightsHTML += `
+                    <div class="weight-event">
+                        <strong>事件 ${i + 1}</strong>: +${w.toFixed(2)}g (累计: ${cumulative.toFixed(2)}g)
+                    </div>
+                `;
+            });
+            document.getElementById('weightEvents').innerHTML = weightsHTML;
+
+            // 保存模拟数据
+            simulatedData = {
+                foods: scenario.foods,
+                weights: weights,
+                scenario: scenarioType
+            };
+
+            // 隐藏结果
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        function generateWeightEvents(scenario) {
+            const weights = scenario.foods.map(f => f.weight + (Math.random() - 0.5) * 2);
+
+            if (scenario.skipWeightIndex !== undefined) {
+                // 漏检：移除某个重量
+                weights.splice(scenario.skipWeightIndex, 1);
+            } else if (scenario.extraWeight) {
+                // 误检：插入额外重量
+                weights.splice(scenario.extraWeight.index, 0, scenario.extraWeight.weight);
+            } else if (scenario.mergeIndices) {
+                // 合并：合并两个重量
+                const [idx1, idx2] = scenario.mergeIndices;
+                weights[idx1] = weights[idx1] + weights[idx2];
+                weights.splice(idx2, 1);
+            }
+
+            return weights;
+        }
+
+        async function executeAlignment() {
+            if (!simulatedData) {
+                alert('请先选择一个测试场景');
+                return;
+            }
+
+            // 构建请求数据
+            const detections = simulatedData.foods.map(food => ({
+                class: food.name,
+                confidence: 0.95,
+                bbox: [
+                    food.x - Math.sqrt(food.area) / 2,
+                    food.y - Math.sqrt(food.area) / 2,
+                    food.x + Math.sqrt(food.area) / 2,
+                    food.y + Math.sqrt(food.area) / 2
+                ]
+            }));
+
+            // 构建重量事件
+            const weightEvents = [{ timestamp: 0, cumulative_weight: 0, delta_weight: 0 }];
+            let cumulative = 0;
+            let timestamp = 0;
+
+            simulatedData.weights.forEach((w, i) => {
+                timestamp += 1.0 + Math.random();
+                cumulative += w;
+                weightEvents.push({
+                    timestamp: timestamp,
+                    cumulative_weight: cumulative,
+                    delta_weight: w
+                });
+            });
+
+            // 调用后端API（这里直接在前端模拟）
+            // 实际应用中应该调用 /detect 接口
+            const result = simulateAlignment(detections, weightEvents);
+
+            displayResults(result);
+        }
+
+        function simulateAlignment(detections, weightEvents) {
+            // 简化的前端模拟（实际应使用后端算法）
+            const foods = detections.map((det, i) => ({
+                class: det.class,
+                bbox: det.bbox,
+                center_x: (det.bbox[0] + det.bbox[2]) / 2,
+                weight: 0,
+                matched: false
+            }));
+
+            const weights = weightEvents.slice(1).map(e => e.delta_weight);
+
+            // 按位置排序
+            foods.sort((a, b) => a.center_x - b.center_x);
+
+            // 简单匹配
+            const aligned = foods.map((food, i) => {
+                if (i < weights.length) {
+                    return {
+                        ...food,
+                        weight: weights[i],
+                        matched: true,
+                        confidence: 0.85
+                    };
+                } else {
+                    return {
+                        ...food,
+                        weight: food.bbox ? (food.bbox[2] - food.bbox[0]) * 0.1 : 50,
+                        matched: false,
+                        confidence: 0.3
+                    };
+                }
+            });
+
+            return {
+                aligned_foods: aligned,
+                metrics: {
+                    total_foods: foods.length,
+                    matched_foods: aligned.filter(a => a.matched).length,
+                    unmatched_foods: aligned.filter(a => !a.matched).length,
+                    avg_confidence: aligned.reduce((sum, a) => sum + a.confidence, 0) / aligned.length,
+                    total_weight: aligned.reduce((sum, a) => sum + a.weight, 0)
+                }
+            };
+        }
+
+        function displayResults(result) {
+            document.getElementById('resultsSection').style.display = 'block';
+
+            // 显示指标
+            const metrics = result.metrics;
+            document.getElementById('metricsDisplay').innerHTML = `
+                <div class="metric-card">
+                    <h3>总菜品数</h3>
+                    <div class="value">${metrics.total_foods}</div>
+                </div>
+                <div class="metric-card">
+                    <h3>成功匹配</h3>
+                    <div class="value">${metrics.matched_foods}</div>
+                </div>
+                <div class="metric-card">
+                    <h3>未匹配</h3>
+                    <div class="value">${metrics.unmatched_foods}</div>
+                </div>
+                <div class="metric-card">
+                    <h3>平均置信度</h3>
+                    <div class="value">${(metrics.avg_confidence * 100).toFixed(1)}%</div>
+                </div>
+                <div class="metric-card">
+                    <h3>总重量</h3>
+                    <div class="value">${metrics.total_weight.toFixed(1)}g</div>
+                </div>
+            `;
+
+            // 显示对齐结果
+            let resultsHTML = '';
+            result.aligned_foods.forEach((food, i) => {
+                const statusClass = food.matched ? 'matched' : 'unmatched';
+                const statusText = food.matched ? '✅ 已匹配' : '⚠️ 未匹配（使用估计值）';
+
+                resultsHTML += `
+                    <div class="alignment-result ${statusClass}">
+                        <h3 style="margin-bottom: 10px;">菜品 #${i + 1}: ${food.class}</h3>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                            <div>
+                                <strong>重量:</strong> ${food.weight.toFixed(2)}g
+                            </div>
+                            <div>
+                                <strong>状态:</strong> ${statusText}
+                            </div>
+                            <div>
+                                <strong>置信度:</strong> ${(food.confidence * 100).toFixed(1)}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('alignmentResults').innerHTML = resultsHTML;
+
+            // 滚动到结果区域
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('imagePreview').innerHTML = `
+                    <h3 style="margin: 20px 0 10px 0;">上传的图片:</h3>
+                    <img src="${e.target.result}" class="preview-image" alt="上传的图片">
+                    <p style="color: #666; margin-top: 10px;">
+                        提示: 实际使用时会调用YOLO模型进行检测，并执行视觉-重量对齐算法
+                    </p>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 页面加载时默认显示正常场景
+        window.onload = function () {
+            loadScenario('normal');
+        };
+    </script>
+</body>
+
+</html>

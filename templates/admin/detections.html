@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检测记录 - 管理员后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #f5f6fa;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 15px 25px;
+            transition: background 0.3s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th,
+        table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        table th {
+            background: #f8f9fa;
+            color: #666;
+            font-weight: bold;
+        }
+
+        table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .pagination a {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 0 5px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .pagination a:hover {
+            background: #5568d3;
+        }
+
+        .pagination .current {
+            background: #764ba2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>🛠️ 管理后台</h2>
+        <a href="/admin">📊 仪表盘</a>
+        <a href="/admin/users">👥 用户管理</a>
+        <a href="/admin/detections" class="active">🔍 检测记录</a>
+        <a href="/admin/stats">📈 统计分析</a>
+        <a href="/">🏠 返回首页</a>
+        <a href="/logout">🚪 退出登录</a>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>检测记录</h1>
+            <div>总计 {{ detections.total }} 条记录</div>
+        </div>
+
+        <div class="section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户</th>
+                        <th>检测时间</th>
+                        <th>检测结果</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in detections.items %}
+                    <tr>
+                        <td>#{{ record.id }}</td>
+                        <td>{{ record.user.username }}</td>
+                        <td>{{ record.detection_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>
+                            {% set detected_objects = record.detected_objects|from_json %}
+                            {% if detected_objects is iterable and detected_objects is not string %}
+                            {% for obj in detected_objects %}
+                            {{ obj.class }} ({{ (obj.confidence * 100)|round(1) }}%)
+                            {% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                            {% else %}
+                            {{ record.detected_objects[:50] }}...
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="pagination">
+                {% if detections.has_prev %}
+                <a href="?page={{ detections.prev_num }}">上一页</a>
+                {% endif %}
+
+                <a href="?page={{ detections.page }}" class="current">第 {{ detections.page }} 页</a>
+
+                {% if detections.has_next %}
+                <a href="?page={{ detections.next_num }}">下一页</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

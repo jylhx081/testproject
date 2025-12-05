@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检测历史 - YOLO目标检测</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 80px 20px 20px 20px;
+            /* 为固定导航栏留出空间 */
+        }
+
+        /* 固定导航栏样式 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 0 0 15px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 响应式设计 - 媒体查询 */
+        @media (max-width: 768px) {
+            /* 调整整体内边距 */
+            body {
+                padding: 120px 15px 15px 15px;
+            }
+
+            /* 导航栏调整 */
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .navbar div {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .navbar a {
+                margin: 0 8px;
+                font-size: 14px;
+            }
+
+            /* 容器调整 */
+            .container {
+                padding: 25px;
+                border-radius: 15px;
+            }
+
+            /* 标题大小调整 */
+            h1 {
+                font-size: 2em;
+                margin-bottom: 20px;
+            }
+
+            /* 记录卡片调整 */
+            .record {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .record-header {
+                flex-direction: column;
+                gap: 5px;
+                align-items: flex-start;
+            }
+
+            .record-time {
+                font-size: 14px;
+            }
+
+            /* 无记录提示调整 */
+            .no-records {
+                padding: 30px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* 进一步缩小屏幕的调整 */
+            body {
+                padding: 100px 10px 10px 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 10px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .navbar {
+                padding: 10px 15px;
+            }
+
+            .navbar a {
+                margin: 0 5px;
+                font-size: 13px;
+            }
+
+            .record {
+                padding: 12px;
+            }
+
+            .record-content {
+                font-size: 14px;
+            }
+        }
+
+        .navbar a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .record {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .record-time {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .record-content {
+            color: #555;
+        }
+
+        .no-records {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <div>
+            <a href="/" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🏠 首页</a>
+            <a href="/profile" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">👤
+                个人资料</a>
+            <a href="/history" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">📊
+                检测历史</a>
+        </div>
+        <div>
+            <span style="color: #666;">欢迎, {% if user %}{{ user.username }}{% endif %}</span>
+            <a href="/logout" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🚪
+                退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>📊 检测历史记录</h1>
+
+        {% if records %}
+        {% for record in records %}
+        <div class="record">
+            <div class="record-header">
+                <span class="record-time">🕐 {{ record.detection_time.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                <span>检测ID: #{{ record.id }}</span>
+            </div>
+            <div class="record-content">
+                <strong>检测结果:</strong> {{ record.detected_objects }}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="no-records">
+            <p>📭 暂无检测记录</p>
+            <p style="margin-top: 10px;"><a href="/" style="color: #667eea;">立即开始检测</a></p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>
