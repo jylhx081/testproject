@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO目标检测</title>
+    <title>智能营养推荐</title>
     <style>
         * {
             margin: 0;
@@ -13,11 +13,10 @@
         }
 
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', 'Microsoft YaHei', Arial, sans-serif;
+            background: #F3F4F6;
             min-height: 100vh;
             padding: 80px 20px 20px 20px;
-            /* 为固定导航栏留出空间 */
         }
 
         /* 固定导航栏样式 */
@@ -170,9 +169,16 @@
 
         h1 {
             text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5em;
+            color: #111;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+            font-weight: 800;
+        }
+        .subtitle {
+            text-align: center;
+            color: #6B7280;
+            margin-bottom: 24px;
+            font-size: 14px;
         }
 
         .upload-section {
@@ -199,22 +205,22 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #34D399;
             color: white;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: scale(1.03);
+            box-shadow: 0 8px 20px rgba(52, 211, 153, 0.35);
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: #F97316;
             color: white;
         }
 
         .btn-info {
-            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            background: #10B981;
             color: white;
         }
 
@@ -458,25 +464,23 @@
 <body>
     <div class="navbar">
         <div>
-            <a href="/" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🏠 首页</a>
-            <a href="/profile" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">👤
-                个人资料</a>
-            <a href="/history" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">📊
-                检测历史</a>
+            <a href="/" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">🏠 首页</a>
+            <a href="/library" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">📚 菜品库</a>
+            <a href="/recommend" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">💡 个性化推荐</a>
+            <a href="/pickup" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">⚖️ 取餐识别</a>
             {% if user and user.is_admin %}
-            <a href="/admin" style="color: #f5576c; text-decoration: none; margin: 0 15px; font-weight: bold;">🛠️
-                管理后台</a>
+            <a href="/admin" style="color: #F97316; text-decoration: none; margin: 0 15px; font-weight: 700;">🛠️ 管理后台</a>
             {% endif %}
         </div>
         <div>
-            <span style="color: #666;">欢迎, {% if user %}{{ user.username }}{% endif %}</span>
-            <a href="/logout" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🚪
-                退出</a>
+            <span style="color: #374151;">欢迎, {% if user %}{{ user.username }}{% endif %}</span>
+            <a href="/logout" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">🚪 退出</a>
         </div>
     </div>
 
     <div class="container">
-        <h1>🎯 YOLO目标检测</h1>
+        <h1>智能营养推荐，吃对每一顿</h1>
+        <div class="subtitle">融合视觉识别 + 重量感知，精准匹配你的营养需求</div>
 
         <div class="upload-section">
             <div class="button-group">
@@ -486,12 +490,10 @@
                 <button class="btn-secondary" onclick="openCamera()">
                     📷 拍照上传
                 </button>
-                <button class="btn-warning" onclick="toggleWeightInput()" id="weightToggleBtn"
-                    style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+                <button class="btn-secondary" onclick="toggleWeightInput()" id="weightToggleBtn">
                     ⚖️ 添加重量数据
                 </button>
-                <button class="btn-info" onclick="toggleBMRCalculator()" id="bmrToggleBtn"
-                    style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);">
+                <button class="btn-info" onclick="toggleBMRCalculator()" id="bmrToggleBtn">
                     🧮 BMR计算器
                 </button>
             </div>

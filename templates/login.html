@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - YOLO目标检测</title>
+    <title>登录 - 智能营养推荐</title>
     <style>
         * {
             margin: 0;
@@ -13,8 +13,8 @@
         }
 
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', 'Microsoft YaHei', Arial, sans-serif;
+            background: #F3F4F6;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -24,12 +24,24 @@
 
         .login-container {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            max-width: 400px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 0.4fr 0.6fr;
+            max-width: 900px;
             width: 100%;
         }
+        .brand {
+            background: linear-gradient(135deg, rgba(52,211,153,0.15), rgba(249,115,22,0.12));
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .brand h2 { color: #111; font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+        .brand p { color: #6B7280; font-size: 14px; }
+        .form { padding: 40px; }
 
         h1 {
             text-align: center;
@@ -60,26 +72,26 @@
 
         input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #34D399;
         }
 
         button {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #34D399;
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.3s;
+            transition: transform 0.2s ease;
             margin-top: 10px;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: scale(1.03);
+            box-shadow: 0 8px 20px rgba(52, 211, 153, 0.35);
         }
 
         .message {
@@ -107,7 +119,7 @@
         }
 
         .register-link a {
-            color: #667eea;
+            color: #34D399;
             text-decoration: none;
             font-weight: bold;
         }
@@ -120,26 +132,36 @@
 
 <body>
     <div class="login-container">
-        <h1>🔐 用户登录</h1>
-
-        <div class="message" id="message"></div>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label>用户名</label>
-                <input type="text" id="username" name="username" required>
+        <div class="brand">
+            <div style="font-size: 28px; font-weight: 900; color:#34D399; display:flex; align-items:center; gap:8px;">
+                <span style="display:inline-block; width:24px; height:24px; background:#34D399; border-radius:6px;"></span>
+                智能营养推荐
             </div>
-
-            <div class="form-group">
-                <label>密码</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-
-            <button type="submit">登录</button>
-        </form>
-
-        <div class="register-link">
-            还没有账号？ <a href="/register">立即注册</a>
+            <p>让食堂餐更懂你的健康</p>
+            <div style="margin-top:12px; color:#6B7280; font-size:12px;">视觉识别 + 重量感知，精准匹配营养需求</div>
+        </div>
+        <div class="form">
+            <h1 style="margin:0 0 20px 0; font-size:22px; font-weight:800; color:#111;">用户登录</h1>
+            <div class="message" id="message"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>用户名 / 学号 / 手机号</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0 0 0;">
+                    <label style="display:flex; align-items:center; gap:8px; color:#6B7280; font-weight:400;">
+                        <input type="checkbox" id="remember" style="width:16px; height:16px;"> 记住我
+                    </label>
+                    <a href="#" style="color:#34D399; font-size:12px; text-decoration:none;">忘记密码</a>
+                </div>
+                <button type="submit">登录</button>
+                <a href="/register" style="display:inline-block; width:100%; padding:12px; border:2px solid #34D399; border-radius:10px; color:#34D399; font-weight:700; text-align:center; margin-top:10px; text-decoration:none;">注册账号</a>
+                <div class="register-link" style="margin-top:10px; font-size:12px;">企业 / 高校专属登录入口</div>
+            </form>
         </div>
     </div>
 

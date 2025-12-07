@@ -46,6 +46,9 @@ class User(db.Model):
     weight = db.Column(db.Float)  # 体重(kg)
     age = db.Column(db.Integer)
     gender = db.Column(db.String(10))
+    # 新增字段
+    health_goal = db.Column(db.String(20))  # 健康目标：减脂、维持、增肌
+    target_speed = db.Column(db.String(20))  # 目标速度：慢速、中速、快速
     is_admin = db.Column(db.Boolean, default=False)  # 是否为管理员
     is_active = db.Column(db.Boolean, default=True)  # 账号是否激活
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -67,6 +70,8 @@ class User(db.Model):
             'weight': self.weight,
             'age': self.age,
             'gender': self.gender,
+            'health_goal': self.health_goal,
+            'target_speed': self.target_speed,
             'is_admin': bool(self.is_admin),  # 显式转换为布尔值
             'is_active': bool(self.is_active),  # 显式转换为布尔值
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -418,6 +423,14 @@ def index():
     return render_template('index.html', user=user)
 
 
+@app.route('/pickup')
+def pickup():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    return render_template('pickup.html', user=user)
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -457,6 +470,9 @@ def register():
         weight = data.get('weight')
         age = data.get('age')
         gender = data.get('gender')
+        # 新增字段
+        health_goal = data.get('health_goal')
+        target_speed = data.get('target_speed')
 
         # 检查用户名是否已存在
         if User.query.filter_by(username=username).first():
@@ -471,6 +487,8 @@ def register():
             weight=weight,
             age=age,
             gender=gender,
+            health_goal=health_goal,
+            target_speed=target_speed,
             is_admin=False,  # 默认非管理员
             is_active=True  # 默认激活
         )
@@ -505,6 +523,9 @@ def profile():
         user.age = data.get('age', user.age)
         user.gender = data.get('gender', user.gender)
         user.email = data.get('email', user.email)
+        # 新增字段
+        user.health_goal = data.get('health_goal', user.health_goal)
+        user.target_speed = data.get('target_speed', user.target_speed)
 
         db.session.commit()
 
@@ -764,6 +785,85 @@ def history():
     return render_template('history.html', records=records)
 
 
+@app.route('/analysis')
+def analysis():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    return render_template('analysis.html', user=user)
+
+
+@app.route('/library')
+def library():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    return render_template('library.html', user=user)
+
+
+@app.route('/recommend')
+def recommend():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    return render_template('recommend.html', user=user)
+
+
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    if 'user_id' not in session:
+        return redirect(url_for('login')) if request.method == 'GET' else jsonify({'success': False, 'message': '未登录'}), 401
+    if request.method == 'POST':
+        return jsonify({'success': True, 'message': '反馈成功！'})
+    user = User.query.get(session['user_id'])
+    return render_template('feedback.html', user=user)
+
+
+@app.route('/api/dishes')
+def api_dishes():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    q = request.args.get('q', '').strip()
+    cooking = request.args.get('cooking_method')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 12, type=int)
+    query = Dish.query
+    if q:
+        query = query.filter(Dish.name.like(f"%{q}%"))
+    if cooking:
+        query = query.filter(Dish.cooking_method == cooking)
+    pagination = query.order_by(Dish.name.asc()).paginate(page=page, per_page=per_page, error_out=False)
+    items = []
+    for d in pagination.items:
+        total_energy = 0.0
+        total_fat = 0.0
+        total_carb = 0.0
+        total_pro = 0.0
+        total_weight = sum(di.amount_g for di in d.ingredients)
+        for di in d.ingredients:
+            nf = di.ingredient_obj.nutrition
+            if not nf: continue
+            factor = (di.amount_g or 0) / 100.0
+            total_energy += (nf.energy_kcal or 0) * factor
+            total_fat += (nf.fat_g or 0) * factor
+            total_carb += (nf.carbohydrate_g or 0) * factor
+            total_pro += (nf.protein_g or 0) * factor
+        tag = '低脂' if total_fat <= 15 else ('高蛋白' if total_pro >= 25 else '均衡')
+        items.append({
+            'id': d.dish_id,
+            'name': d.name,
+            'canteen': d.canteen.name if d.canteen else None,
+            'cooking_method': d.cooking_method,
+            'energy_kcal': round(total_energy,1),
+            'protein_g': round(total_pro,1),
+            'fat_g': round(total_fat,1),
+            'carb_g': round(total_carb,1),
+            'recipe_weight_g': round(total_weight or 0,1),
+            'tag': tag
+        })
+    return jsonify({'success': True, 'data': items, 'page': page, 'pages': pagination.pages})
+
+
 # ==================== 管理员后台 ====================
 
 def admin_required(f):
@@ -924,6 +1024,21 @@ def create_admin():
 def weight_alignment_demo():
     """视觉-重量对齐算法演示页面"""
     return render_template('weight_alignment_demo.html')
+
+
+@app.route('/api/last_detection')
+def api_last_detection():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    record = DetectionRecord.query.filter_by(user_id=session['user_id']).order_by(
+        DetectionRecord.detection_time.desc()).first()
+    if not record:
+        return jsonify({'success': True, 'data': None})
+    try:
+        detections = json.loads(record.detected_objects or '[]')
+    except Exception:
+        detections = []
+    return jsonify({'success': True, 'data': {'detections': detections, 'time': record.detection_time.isoformat()}})
 
 
 if __name__ == '__main__':

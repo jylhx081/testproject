@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用餐反馈</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter','Microsoft YaHei',Arial,sans-serif;background:#F3F4F6;min-height:100vh;padding:80px 20px 20px}
+        .navbar{position:fixed;top:0;left:0;width:100%;background:rgba(255,255,255,0.95);padding:15px 30px;border-radius:0 0 15px 15px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 5px 15px rgba(0,0,0,0.1);z-index:1000;backdrop-filter:blur(10px)}
+        .navbar a{color:#34D399;text-decoration:none;margin:0 15px;font-weight:700}
+        .container{max-width:900px;margin:0 auto}
+        .title{margin-bottom:8px;color:#111;font-weight:800}
+        .subtitle{color:#6B7280;font-size:14px;margin-bottom:12px}
+        .card{background:#FFFFFF;border:2px solid #E5E7EB;border-radius:12px;padding:12px;margin-bottom:10px}
+        .btn{padding:10px 14px;border:none;border-radius:10px;font-weight:700;color:#FFFFFF;background:#34D399;cursor:pointer}
+        .btn:hover{transform:scale(1.03);box-shadow:0 8px 20px rgba(52,211,153,.35)}
+        .rate{display:flex;gap:8px;margin-top:6px}
+        .tag{padding:8px 12px;border:2px solid #E5E7EB;border-radius:10px;color:#374151;cursor:pointer}
+        .tag.active{border-color:#34D399;color:#065F46;background:#ECFDF5}
+        textarea{width:100%;min-height:80px;border:2px solid #E5E7EB;border-radius:10px;padding:10px}
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div>
+            <a href="/">🏠 首页</a>
+            <a href="/library">📚 菜品库</a>
+            <a href="/recommend">💡 个性化推荐</a>
+            <a href="/pickup">⚖️ 取餐识别</a>
+        </div>
+        <div>
+            <span style="color:#374151">欢迎, {{ user.username }}</span>
+            <a href="/logout">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2 class="title">用餐反馈（帮助我们优化推荐）</h2>
+        <div class="subtitle">你的评价将影响后续菜品推荐</div>
+        <div id="list"></div>
+        <div style="text-align:center; margin-top:12px">
+            <button class="btn" onclick="submitFeedback()">提交反馈</button>
+        </div>
+        <div id="ok" style="display:none; margin-top:10px; text-align:center; color:#065F46; background:#ECFDF5; border:2px solid #A7F3D0; border-radius:10px; padding:10px">反馈成功！</div>
+    </div>
+
+    <script>
+        const sample = [ '清蒸鸡胸', '红烧豆腐', '凉拌黄瓜' ];
+        function render(){
+            const list = document.getElementById('list');
+            sample.forEach(n=>{
+                const c = document.createElement('div');
+                c.className='card';
+                c.innerHTML = `<div style='display:flex; align-items:center; gap:10px;'>
+                                  <div style='width:56px; height:56px; background:#F3F4F6; border-radius:10px'></div>
+                                  <div><strong>${n}</strong>
+                                    <div class='rate'>
+                                      <div class='tag' onclick='toggle(this)'>喜欢</div>
+                                      <div class='tag' onclick='toggle(this)'>一般</div>
+                                      <div class='tag' onclick='toggle(this)'>不喜欢</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div style='margin-top:10px'>
+                                  <textarea placeholder='其他建议或意见...'></textarea>
+                                </div>`;
+                list.appendChild(c);
+            });
+        }
+        function toggle(el){ el.parentElement.querySelectorAll('.tag').forEach(t=>t.classList.remove('active')); el.classList.add('active'); }
+        async function submitFeedback(){
+            const res = await fetch('/feedback', { method:'POST' });
+            const {success} = await res.json();
+            if(success){ document.getElementById('ok').style.display='block'; }
+        }
+        render();
+    </script>
+</body>
+</html>

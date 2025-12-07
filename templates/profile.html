@@ -39,6 +39,7 @@
 
         /* 响应式设计 - 媒体查询 */
         @media (max-width: 768px) {
+
             /* 调整整体内边距 */
             body {
                 padding: 120px 15px 15px 15px;
@@ -86,7 +87,9 @@
             }
 
             /* 输入框调整 */
-            input, select, textarea {
+            input,
+            select,
+            textarea {
                 padding: 10px 12px;
                 font-size: 14px;
             }
@@ -101,6 +104,7 @@
         }
 
         @media (max-width: 480px) {
+
             /* 进一步缩小屏幕的调整 */
             body {
                 padding: 100px 10px 10px 10px;
@@ -208,7 +212,7 @@
         select:focus,
         textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #34D399;
         }
 
         .form-row {
@@ -222,19 +226,19 @@
 
         button {
             padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #34D399;
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.3s;
+            transition: transform 0.2s ease;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: scale(1.03);
+            box-shadow: 0 8px 20px rgba(52, 211, 153, 0.35);
         }
 
         .message {
@@ -276,16 +280,14 @@
 <body>
     <div class="navbar">
         <div>
-            <a href="/" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🏠 首页</a>
-            <a href="/profile" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">👤
-                个人资料</a>
-            <a href="/history" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">📊
-                检测历史</a>
+            <a href="/" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">🏠 首页</a>
+            <a href="/library" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">📚 菜品库</a>
+            <a href="/recommend" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">💡 个性化推荐</a>
+            <a href="/pickup" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">⚖️ 取餐识别</a>
         </div>
         <div>
-            <span style="color: #666;">欢迎, {{ user.username }}</span>
-            <a href="/logout" style="color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold;">🚪
-                退出</a>
+            <span style="color: #374151;">欢迎, {{ user.username }}</span>
+            <a href="/logout" style="color: #34D399; text-decoration: none; margin: 0 15px; font-weight: 700;">🚪 退出</a>
         </div>
     </div>
 
@@ -336,7 +338,49 @@
                     </div>
                 </div>
 
+                <div class="info-display">
+                    <div class="info-item">
+                        <strong>健康目标:</strong>
+                        <span id="display-health-goal">{% if user.health_goal %}{{ user.health_goal }}{% else %}未设置{%
+                            endif %}</span>
+                    </div>
+                    <div class="info-item">
+                        <strong>目标速度:</strong>
+                        <span id="display-target-speed">{% if user.target_speed %}{{ user.target_speed }}{% else %}未设置{%
+                            endif %}</span>
+                    </div>
+                </div>
+
                 <button type="submit">💾 保存基本信息</button>
+            </form>
+        </div>
+
+        <!-- 健康目标 -->
+        <div class="section">
+            <h2>🎯 健康目标</h2>
+            <form id="goalForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>健康目标</label>
+                        <select id="health_goal">
+                            <option value="">请选择</option>
+                            <option value="减脂">减脂</option>
+                            <option value="维持">维持</option>
+                            <option value="增肌">增肌</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>目标速度</label>
+                        <select id="target_speed">
+                            <option value="">请选择</option>
+                            <option value="慢速">慢速（每周0.25-0.5kg）</option>
+                            <option value="中速">中速（每周0.5-0.75kg）</option>
+                            <option value="快速">快速（每周0.75-1kg）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit">💾 保存健康目标</button>
             </form>
         </div>
 
@@ -408,8 +452,29 @@
             }
         }
 
-        // 页面加载时获取饮食习惯
+        // 加载健康目标数据
+        async function loadHealthGoals() {
+            try {
+                // 健康目标信息已经在用户基本信息中，会在页面加载时自动填充
+                // 这里确保表单字段正确设置
+                const urlParams = new URLSearchParams(window.location.search);
+                const healthGoal = urlParams.get('health_goal') || '{{ user.health_goal }}';
+                const targetSpeed = urlParams.get('target_speed') || '{{ user.target_speed }}';
+
+                if (healthGoal && healthGoal !== 'None') {
+                    document.getElementById('health_goal').value = healthGoal;
+                }
+                if (targetSpeed && targetSpeed !== 'None') {
+                    document.getElementById('target_speed').value = targetSpeed;
+                }
+            } catch (err) {
+                console.error('加载健康目标失败:', err);
+            }
+        }
+
+        // 页面加载时获取饮食习惯和健康目标
         loadDietHabits();
+        loadHealthGoals();
 
         // 保存基本信息
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
@@ -434,6 +499,14 @@
 
                 const data = await response.json();
                 showMessage(data.success ? 'success' : 'error', data.message);
+
+                // 更新显示的健康目标信息
+                if (formData.health_goal) {
+                    document.getElementById('display-health-goal').textContent = formData.health_goal;
+                }
+                if (formData.target_speed) {
+                    document.getElementById('display-target-speed').textContent = formData.target_speed;
+                }
             } catch (err) {
                 showMessage('error', '保存失败: ' + err.message);
             }
@@ -463,6 +536,39 @@
 
                 const data = await response.json();
                 showMessage(data.success ? 'success' : 'error', data.message);
+            } catch (err) {
+                showMessage('error', '保存失败: ' + err.message);
+            }
+        });
+
+        // 保存健康目标
+        document.getElementById('goalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                health_goal: document.getElementById('health_goal').value,
+                target_speed: document.getElementById('target_speed').value
+            };
+
+            try {
+                const response = await fetch('/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                showMessage(data.success ? 'success' : 'error', data.message);
+
+                // 更新显示的健康目标信息
+                if (formData.health_goal) {
+                    document.getElementById('display-health-goal').textContent = formData.health_goal;
+                }
+                if (formData.target_speed) {
+                    document.getElementById('display-target-speed').textContent = formData.target_speed;
+                }
             } catch (err) {
                 showMessage('error', '保存失败: ' + err.message);
             }

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>注册 - YOLO目标检测</title>
+    <title>注册 - 智能营养推荐</title>
     <style>
         * {
             margin: 0;
@@ -13,8 +13,8 @@
         }
 
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', 'Microsoft YaHei', Arial, sans-serif;
+            background: #F3F4F6;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -24,10 +24,10 @@
 
         .register-container {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
             padding: 40px;
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -64,7 +64,7 @@
         input:focus,
         select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #34D399;
         }
 
         .form-row {
@@ -79,20 +79,20 @@
         button {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #34D399;
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.3s;
+            transition: transform 0.2s ease;
             margin-top: 10px;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: scale(1.03);
+            box-shadow: 0 8px 20px rgba(52, 211, 153, 0.35);
         }
 
         .message {
@@ -120,7 +120,7 @@
         }
 
         .login-link a {
-            color: #667eea;
+            color: #34D399;
             text-decoration: none;
             font-weight: bold;
         }
@@ -187,6 +187,27 @@
                 </div>
             </div>
 
+            <!-- 新增字段 -->
+            <div class="form-group">
+                <label>健康目标</label>
+                <select id="health_goal" name="health_goal">
+                    <option value="">请选择</option>
+                    <option value="减脂">减脂</option>
+                    <option value="维持">维持</option>
+                    <option value="增肌">增肌</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>目标速度</label>
+                <select id="target_speed" name="target_speed">
+                    <option value="">请选择</option>
+                    <option value="慢速">慢速（每周0.25-0.5kg）</option>
+                    <option value="中速">中速（每周0.5-0.75kg）</option>
+                    <option value="快速">快速（每周0.75-1kg）</option>
+                </select>
+            </div>
+
             <button type="submit">注册</button>
         </form>
 
@@ -217,7 +238,10 @@
                 height: parseFloat(document.getElementById('height').value) || null,
                 weight: parseFloat(document.getElementById('weight').value) || null,
                 age: parseInt(document.getElementById('age').value) || null,
-                gender: document.getElementById('gender').value || null
+                gender: document.getElementById('gender').value || null,
+                // 新增字段
+                health_goal: document.getElementById('health_goal').value || null,
+                target_speed: document.getElementById('target_speed').value || null
             };
 
             try {
